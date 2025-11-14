@@ -93,6 +93,12 @@
       flex-wrap: wrap;
     }
 
+    .top-actions {
+      display: flex;
+      gap: clamp(8px, 2.4vw, 12px);
+      flex-wrap: wrap;
+    }
+
     .app-title {
       font-size: clamp(20px, 5vw, 26px);
       font-weight: 800;
@@ -308,7 +314,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: clamp(10px, 3vw, 14px);
-      margin-top: clamp(12px, 3vw, 18px);
+      margin-top: clamp(12px, 3vw, 16px);
     }
 
     .summary-pill {
@@ -386,14 +392,14 @@
     }
 
     .actions-panel {
-      margin-top: clamp(14px, 3.8vw, 22px);
-      background: rgba(15, 23, 42, 0.55);
+      margin-top: clamp(12px, 3.8vw, 18px);
+      background: rgba(15, 23, 42, 0.45);
       border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: clamp(14px, 4vw, 20px);
-      padding: clamp(14px, 3.6vw, 22px);
+      border-radius: clamp(12px, 3.4vw, 18px);
+      padding: clamp(12px, 3.2vw, 18px);
       display: flex;
       flex-direction: column;
-      gap: clamp(12px, 3.6vw, 18px);
+      gap: clamp(10px, 3vw, 14px);
       align-items: stretch;
       flex-shrink: 0;
     }
@@ -508,6 +514,76 @@
       color: var(--text-muted);
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 5vw, 32px);
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: min(420px, 100%);
+      background: rgba(15, 23, 42, 0.92);
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.45);
+      padding: clamp(18px, 5vw, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      max-height: min(90vh, 540px);
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-title {
+      font-size: clamp(18px, 4.4vw, 22px);
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #e2e8f0;
+    }
+
+    .modal-close {
+      background: none;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #94a3b8;
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      color: #f1f5f9;
+      border-color: rgba(148, 163, 184, 0.55);
+    }
+
     @media (max-width: 720px) and (max-height: 1280px) {
       .app-shell {
         padding: clamp(12px, 6vw, 20px);
@@ -557,6 +633,16 @@
       .salary-input-row .text-input {
         width: 100%;
       }
+
+      .top-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .top-actions .toggle-btn,
+      .top-actions .ghost-btn {
+        flex: 1;
+      }
     }
 
     @media (max-width: 480px) {
@@ -588,7 +674,10 @@
           <div class="app-title">Quick Balance Tracker</div>
           <div class="app-caption">Log amounts, remember why, see the total</div>
         </div>
-        <button id="resetBtn" class="ghost-btn" type="button">Reset All</button>
+        <div class="top-actions">
+          <button id="toggleExpenseForm" class="toggle-btn" type="button" aria-expanded="false" aria-controls="entryForm" data-open-label="Hide Expense" data-closed-label="Add Expense">Add Expense</button>
+          <button id="resetBtn" class="ghost-btn" type="button">Reset All</button>
+        </div>
       </div>
 
       <div id="statusMessage" class="status-message"></div>
@@ -603,80 +692,83 @@
         <div class="empty-state">No entries yet. Add your first amount.</div>
       </div>
 
-      <div class="actions-panel" aria-label="Add salary or expense">
-        <h2>Actions</h2>
-        <div id="actionsMenu" class="actions-menu">
-          <button
-            id="toggleSalaryForm"
-            class="toggle-btn"
-            type="button"
-            aria-expanded="false"
-            aria-controls="salaryForm"
-            data-open-label="Hide Salary"
-            data-closed-label="Add Salary"
-          >
-            Add Salary
-          </button>
-          <button
-            id="toggleExpenseForm"
-            class="toggle-btn"
-            type="button"
-            aria-expanded="false"
-            aria-controls="entryForm"
-            data-open-label="Hide Expense"
-            data-closed-label="Add Expense"
-          >
-            Add Expense
-          </button>
-        </div>
-        <form id="salaryForm" class="salary-form collapsible" autocomplete="off" hidden>
-          <label class="input-label" for="salaryInput">Salary / Income</label>
-          <div class="salary-input-row">
-            <input
-              id="salaryInput"
-              name="salary"
-              class="text-input"
-              type="text"
-              inputmode="decimal"
-              placeholder="Example: 2500"
-              spellcheck="false"
-              autocapitalize="none"
-            >
-            <button class="secondary-btn" type="submit">Set Salary</button>
-          </div>
-        </form>
+      <div class="actions-panel" aria-label="Add salary">
+        <button
+          id="toggleSalaryForm"
+          class="toggle-btn"
+          type="button"
+          aria-expanded="false"
+          aria-controls="salaryModal"
+          data-open-label="Hide Salary"
+          data-closed-label="Add Salary"
+        >
+          Add Salary
+        </button>
         <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
+      </div>
+    </div>
+  </div>
 
-        <form id="entryForm" class="input-grid collapsible" autocomplete="off" hidden>
-          <label class="input-label" for="amountInput">Amount</label>
+  <div id="salaryModal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="salaryModalTitle">
+      <div class="modal-header">
+        <div id="salaryModalTitle" class="modal-title">Add Salary</div>
+        <button class="modal-close" type="button" data-close-modal="salaryModal" aria-label="Close">✕</button>
+      </div>
+      <form id="salaryForm" class="salary-form" autocomplete="off">
+        <label class="input-label" for="salaryInput">Salary / Income</label>
+        <div class="salary-input-row">
           <input
-            id="amountInput"
-            name="amount"
+            id="salaryInput"
+            name="salary"
             class="text-input"
             type="text"
             inputmode="decimal"
-            placeholder="29.30 euro"
+            placeholder="Example: 2500"
             spellcheck="false"
             autocapitalize="none"
-            required
           >
+          <button class="secondary-btn" type="submit">Set Salary</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-          <label class="input-label" for="labelInput">What is it for?</label>
-          <input
-            id="labelInput"
-            name="label"
-            class="text-input"
-            type="text"
-            placeholder="YouTube membership"
-            maxlength="120"
-          >
-
-          <div class="button-row">
-            <button class="primary-btn" type="submit">Add Entry</button>
-            <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
-          </div>
-        </form>
+  <div id="expenseModal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+      <div class="modal-header">
+        <div id="expenseModalTitle" class="modal-title">Add Expense</div>
+        <button class="modal-close" type="button" data-close-modal="expenseModal" aria-label="Close">✕</button>
       </div>
+      <form id="entryForm" class="input-grid" autocomplete="off">
+        <label class="input-label" for="amountInput">Amount</label>
+        <input
+          id="amountInput"
+          name="amount"
+          class="text-input"
+          type="text"
+          inputmode="decimal"
+          placeholder="29.30 euro"
+          spellcheck="false"
+          autocapitalize="none"
+          required
+        >
+
+        <label class="input-label" for="labelInput">What is it for?</label>
+        <input
+          id="labelInput"
+          name="label"
+          class="text-input"
+          type="text"
+          placeholder="YouTube membership"
+          maxlength="120"
+        >
+
+        <div class="button-row">
+          <button class="primary-btn" type="submit">Add Entry</button>
+          <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -688,6 +780,10 @@
       const salaryForm = document.getElementById('salaryForm');
       const salaryInput = document.getElementById('salaryInput');
       const salaryHint = document.getElementById('salaryHint');
+      const salaryModal = document.getElementById('salaryModal');
+      const expenseModal = document.getElementById('expenseModal');
+      const modalCloseButtons = document.querySelectorAll('[data-close-modal]');
+      const modalBackdrops = document.querySelectorAll('.modal-backdrop');
       const toggleSalaryBtn = document.getElementById('toggleSalaryForm');
       const toggleExpenseBtn = document.getElementById('toggleExpenseForm');
       const refreshBtn = document.getElementById('refreshBtn');
@@ -726,6 +822,38 @@
 
       function formatCurrency(value) {
         return currencyFormatter.format(value);
+      }
+
+      let activeModal = null;
+      let activeTrigger = null;
+
+      function openModal(modal, focusEl, trigger) {
+        if (!modal) return;
+        activeModal = modal;
+        activeTrigger = trigger || null;
+        modal.hidden = false;
+        requestAnimationFrame(() => {
+          modal.classList.add('active');
+          if (focusEl) {
+            requestAnimationFrame(() => focusEl.focus());
+          }
+        });
+      }
+
+      function closeModal(modal, { returnFocus = true, trigger = null } = {}) {
+        if (!modal) return;
+        modal.classList.remove('active');
+        const targetToFocus = trigger || activeTrigger;
+        setTimeout(() => {
+          modal.hidden = true;
+          if (returnFocus && targetToFocus) {
+            targetToFocus.focus();
+          }
+          if (activeModal === modal) {
+            activeModal = null;
+            activeTrigger = null;
+          }
+        }, 180);
       }
 
       function showStatus(message, type = 'info') {
@@ -891,8 +1019,7 @@
           applyServerSummary(data);
 
           entryForm.reset();
-          updateSectionState(toggleExpenseBtn, entryForm, false);
-          toggleExpenseBtn.focus();
+          closeModal(expenseModal, { trigger: toggleExpenseBtn });
           const remaining = salaryAmount - entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
           showStatus(`Expense saved. Remaining: ${formatCurrency(remaining)}`, 'success');
         } catch (error) {
@@ -958,10 +1085,10 @@
           renderEntries();
           applyServerSummary(data);
           clearStatus();
-          updateSectionState(toggleSalaryBtn, salaryForm, false);
-          updateSectionState(toggleExpenseBtn, entryForm, false);
+          closeModal(expenseModal, { returnFocus: false });
+          closeModal(salaryModal, { returnFocus: false });
           showStatus('Everything cleared. Start fresh with a new salary.', 'success');
-          toggleSalaryBtn.focus();
+          toggleExpenseBtn.focus();
         } catch (error) {
           console.error('Failed to reset entries', error);
           showStatus(error.message || 'Failed to reset entries.', 'error');
@@ -995,8 +1122,7 @@
           salaryAmount = Number(data.salary) || 0;
           applyServerSummary(data);
           salaryForm.reset();
-          updateSectionState(toggleSalaryBtn, salaryForm, false);
-          toggleSalaryBtn.focus();
+          closeModal(salaryModal, { trigger: toggleSalaryBtn });
           showStatus(`Salary set to ${formatCurrency(salaryAmount)}.`, 'success');
         } catch (error) {
           console.error('Failed to update salary', error);
@@ -1022,35 +1148,34 @@
         await resetAll();
       });
 
-      function updateSectionState(button, section, expanded, focusTarget) {
-        if (!button || !section) return;
-        section.hidden = !expanded;
-        button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        const openLabel = button.dataset.openLabel || 'Hide';
-        const closedLabel = button.dataset.closedLabel || 'Show';
-        button.textContent = expanded ? openLabel : closedLabel;
-        if (expanded && focusTarget) {
-          requestAnimationFrame(() => focusTarget.focus());
-        }
-      }
-
-      function toggleSection(button, section, focusTarget, { onOpen, onClose } = {}) {
-        const expanded = button.getAttribute('aria-expanded') === 'true';
-        const nextState = !expanded;
-        updateSectionState(button, section, nextState, focusTarget);
-        if (nextState && typeof onOpen === 'function') {
-          onOpen();
-        } else if (!nextState && typeof onClose === 'function') {
-          onClose();
-        }
-      }
-
-      toggleSalaryBtn.addEventListener('click', () => {
-        toggleSection(toggleSalaryBtn, salaryForm, salaryInput);
+      toggleSalaryBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        openModal(salaryModal, salaryInput, toggleSalaryBtn);
       });
 
-      toggleExpenseBtn.addEventListener('click', () => {
-        toggleSection(toggleExpenseBtn, entryForm, amountInput);
+      toggleExpenseBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        openModal(expenseModal, amountInput, toggleExpenseBtn);
+      });
+
+      modalCloseButtons.forEach((button) => {
+        const targetId = button.getAttribute('data-close-modal');
+        const modal = document.getElementById(targetId);
+        button.addEventListener('click', () => closeModal(modal));
+      });
+
+      modalBackdrops.forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            closeModal(modal);
+          }
+        });
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && activeModal) {
+          closeModal(activeModal);
+        }
       });
 
       amountInput.addEventListener('keydown', () => clearStatus());
@@ -1058,9 +1183,7 @@
       salaryInput.addEventListener('keydown', () => clearStatus());
 
       fetchEntries({ silent: true });
-      updateSectionState(toggleSalaryBtn, salaryForm, false);
-      updateSectionState(toggleExpenseBtn, entryForm, false);
-      toggleSalaryBtn.focus();
+      toggleExpenseBtn.focus();
     })();
   </script>
   <script>
