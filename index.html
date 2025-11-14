@@ -401,7 +401,7 @@
     }
 
     .actions-menu {
-      display: none;
+      display: flex;
       flex-direction: column;
       gap: 10px;
       width: 100%;
@@ -410,10 +410,6 @@
       border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 14px;
       box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.35);
-    }
-
-    .actions-menu.is-open {
-      display: flex;
     }
 
     .actions-menu .toggle-btn {
@@ -595,18 +591,7 @@
 
       <div class="actions-panel" aria-label="Add salary or expense">
         <h2>Actions</h2>
-        <button
-          id="toggleActions"
-          class="toggle-btn action-trigger"
-          type="button"
-          aria-expanded="false"
-          aria-controls="actionsMenu"
-          data-open-label="Close Actions"
-          data-closed-label="Actions"
-        >
-          Actions
-        </button>
-        <div id="actionsMenu" class="actions-menu collapsible" hidden>
+        <div id="actionsMenu" class="actions-menu">
           <button
             id="toggleSalaryForm"
             class="toggle-btn"
@@ -689,8 +674,6 @@
       const salaryForm = document.getElementById('salaryForm');
       const salaryInput = document.getElementById('salaryInput');
       const salaryHint = document.getElementById('salaryHint');
-      const toggleActionsBtn = document.getElementById('toggleActions');
-      const actionsMenu = document.getElementById('actionsMenu');
       const toggleSalaryBtn = document.getElementById('toggleSalaryForm');
       const toggleExpenseBtn = document.getElementById('toggleExpenseForm');
       const refreshBtn = document.getElementById('refreshBtn');
@@ -895,8 +878,7 @@
 
           entryForm.reset();
           updateSectionState(toggleExpenseBtn, entryForm, false);
-          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
-          toggleActionsBtn.focus();
+          toggleExpenseBtn.focus();
           const remaining = salaryAmount - entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
           showStatus(`Expense saved. Remaining: ${formatCurrency(remaining)}`, 'success');
         } catch (error) {
@@ -919,9 +901,7 @@
           const data = await response.json().catch(() => ({}));
           renderEntries();
           applyServerSummary(data);
-          const targetFocus = actionsMenu.hidden ? toggleExpenseBtn : toggleActionsBtn;
-          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
-          targetFocus.focus();
+          toggleExpenseBtn.focus();
           showStatus('Expense removed.', 'info');
         } catch (error) {
           console.error('Failed to remove expense', error);
@@ -966,9 +946,8 @@
           clearStatus();
           updateSectionState(toggleSalaryBtn, salaryForm, false);
           updateSectionState(toggleExpenseBtn, entryForm, false);
-          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
           showStatus('Everything cleared. Start fresh with a new salary.', 'success');
-          toggleActionsBtn.focus();
+          toggleSalaryBtn.focus();
         } catch (error) {
           console.error('Failed to reset entries', error);
           showStatus(error.message || 'Failed to reset entries.', 'error');
@@ -1003,8 +982,7 @@
           applyServerSummary(data);
           salaryForm.reset();
           updateSectionState(toggleSalaryBtn, salaryForm, false);
-          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
-          toggleActionsBtn.focus();
+          toggleSalaryBtn.focus();
           showStatus(`Salary set to ${formatCurrency(salaryAmount)}.`, 'success');
         } catch (error) {
           console.error('Failed to update salary', error);
@@ -1033,7 +1011,6 @@
       function updateSectionState(button, section, expanded, focusTarget) {
         if (!button || !section) return;
         section.hidden = !expanded;
-        section.classList.toggle('is-open', expanded);
         button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         const openLabel = button.dataset.openLabel || 'Hide';
         const closedLabel = button.dataset.closedLabel || 'Show';
@@ -1055,15 +1032,11 @@
       }
 
       toggleSalaryBtn.addEventListener('click', () => {
-        toggleSection(toggleSalaryBtn, salaryForm, salaryInput, {
-          onOpen: () => updateSectionState(toggleActionsBtn, actionsMenu, false)
-        });
+        toggleSection(toggleSalaryBtn, salaryForm, salaryInput);
       });
 
       toggleExpenseBtn.addEventListener('click', () => {
-        toggleSection(toggleExpenseBtn, entryForm, amountInput, {
-          onOpen: () => updateSectionState(toggleActionsBtn, actionsMenu, false)
-        });
+        toggleSection(toggleExpenseBtn, entryForm, amountInput);
       });
 
       amountInput.addEventListener('keydown', () => clearStatus());
@@ -1071,10 +1044,9 @@
       salaryInput.addEventListener('keydown', () => clearStatus());
 
       fetchEntries({ silent: true });
-      updateSectionState(toggleActionsBtn, actionsMenu, false);
       updateSectionState(toggleSalaryBtn, salaryForm, false);
       updateSectionState(toggleExpenseBtn, entryForm, false);
-      toggleActionsBtn.focus();
+      toggleSalaryBtn.focus();
     })();
   </script>
   <script>
