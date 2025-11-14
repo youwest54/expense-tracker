@@ -129,6 +129,18 @@
       transform: translateY(1px);
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .toggle-btn {
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(15, 23, 42, 0.55);
@@ -170,6 +182,10 @@
 
     .card-header .input-label {
       margin: 0;
+    }
+
+    .collapsible[hidden] {
+      display: none !important;
     }
 
     .input-grid {
@@ -364,6 +380,24 @@
       max-height: min(420px, 55vh);
     }
 
+    .actions-panel {
+      margin-top: clamp(16px, 4vw, 28px);
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      padding: clamp(16px, 4vw, 22px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(14px, 4vw, 20px);
+    }
+
+    .actions-panel h2 {
+      font-size: 14px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
     .entries-container::-webkit-scrollbar {
       width: 4px;
     }
@@ -470,6 +504,10 @@
         max-height: none;
       }
 
+      .actions-panel {
+        padding: clamp(14px, 6vw, 20px);
+      }
+
       .salary-input-row {
         flex-direction: column;
       }
@@ -509,22 +547,36 @@
         <button id="resetBtn" class="ghost-btn" type="button">Reset All</button>
       </div>
 
-      <div class="salary-card">
+      <div id="statusMessage" class="status-message"></div>
+
+      <div class="summary-bar">
+        <div id="salaryPill" class="summary-pill">Salary: €0.00</div>
+        <div id="entryCount" class="summary-pill">Expenses: 0 | Spent: €0.00</div>
+        <div id="totalAmount" class="summary-pill">Remaining: €0.00</div>
+      </div>
+
+      <div id="entriesContainer" class="entries-container">
+        <div class="empty-state">No entries yet. Add your first amount.</div>
+      </div>
+
+      <div class="actions-panel" aria-label="Add salary or expense">
+        <h2>Actions</h2>
         <div class="card-header">
-          <div class="input-label">Salary / Income</div>
+          <span class="sr-only" id="salarySectionLabel">Salary / Income</span>
           <button
             id="toggleSalaryForm"
             class="toggle-btn"
             type="button"
             aria-expanded="false"
             aria-controls="salaryForm"
-            data-open-label="− Hide Salary"
-            data-closed-label="＋ Add Salary"
+            aria-labelledby="salarySectionLabel toggleSalaryForm"
+            data-open-label="Hide Salary"
+            data-closed-label="Add Salary"
           >
-            ＋ Add Salary
+            Add Salary
           </button>
         </div>
-        <form id="salaryForm" class="salary-form" autocomplete="off" hidden>
+        <form id="salaryForm" class="salary-form collapsible" autocomplete="off" hidden aria-labelledby="salarySectionLabel">
           <label class="input-label" for="salaryInput">Salary / Income</label>
           <div class="salary-input-row">
             <input
@@ -541,63 +593,52 @@
           </div>
         </form>
         <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
-      </div>
 
-      <div class="card-header">
-        <div class="input-label">Expenses</div>
-        <button
-          id="toggleExpenseForm"
-          class="toggle-btn"
-          type="button"
-          aria-expanded="false"
-          aria-controls="entryForm"
-          data-open-label="− Hide Expense"
-          data-closed-label="＋ Add Expense"
-        >
-          ＋ Add Expense
-        </button>
-      </div>
-
-      <form id="entryForm" class="input-grid" autocomplete="off" hidden>
-        <label class="input-label" for="amountInput">Amount</label>
-        <input
-          id="amountInput"
-          name="amount"
-          class="text-input"
-          type="text"
-          inputmode="decimal"
-          placeholder="29.30 euro"
-          spellcheck="false"
-          autocapitalize="none"
-          required
-        >
-
-        <label class="input-label" for="labelInput">What is it for?</label>
-        <input
-          id="labelInput"
-          name="label"
-          class="text-input"
-          type="text"
-          placeholder="YouTube membership"
-          maxlength="120"
-        >
-
-        <div class="button-row">
-          <button class="primary-btn" type="submit">Add Entry</button>
-          <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
+        <div class="card-header">
+          <span class="sr-only" id="expenseSectionLabel">Expenses</span>
+          <button
+            id="toggleExpenseForm"
+            class="toggle-btn"
+            type="button"
+            aria-expanded="false"
+            aria-controls="entryForm"
+            aria-labelledby="expenseSectionLabel toggleExpenseForm"
+            data-open-label="Hide Expense"
+            data-closed-label="Add Expense"
+          >
+            Add Expense
+          </button>
         </div>
-      </form>
 
-      <div id="statusMessage" class="status-message"></div>
+        <form id="entryForm" class="input-grid collapsible" autocomplete="off" hidden aria-labelledby="expenseSectionLabel">
+          <label class="input-label" for="amountInput">Amount</label>
+          <input
+            id="amountInput"
+            name="amount"
+            class="text-input"
+            type="text"
+            inputmode="decimal"
+            placeholder="29.30 euro"
+            spellcheck="false"
+            autocapitalize="none"
+            required
+          >
 
-      <div class="summary-bar">
-        <div id="salaryPill" class="summary-pill">Salary: €0.00</div>
-        <div id="entryCount" class="summary-pill">Expenses: 0 | Spent: €0.00</div>
-        <div id="totalAmount" class="summary-pill">Remaining: €0.00</div>
-      </div>
+          <label class="input-label" for="labelInput">What is it for?</label>
+          <input
+            id="labelInput"
+            name="label"
+            class="text-input"
+            type="text"
+            placeholder="YouTube membership"
+            maxlength="120"
+          >
 
-      <div id="entriesContainer" class="entries-container">
-        <div class="empty-state">No entries yet. Add your first amount.</div>
+          <div class="button-row">
+            <button class="primary-btn" type="submit">Add Entry</button>
+            <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
