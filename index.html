@@ -129,6 +129,49 @@
       transform: translateY(1px);
     }
 
+    .toggle-btn {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.55);
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-btn:hover {
+      border-color: rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.72);
+    }
+
+    .toggle-btn:active {
+      transform: translateY(1px);
+    }
+
+    .toggle-btn:focus-visible {
+      outline: 2px solid rgba(56, 189, 248, 0.65);
+      outline-offset: 2px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .card-header .input-label {
+      margin: 0;
+    }
+
     .input-grid {
       display: grid;
       gap: 12px;
@@ -467,7 +510,21 @@
       </div>
 
       <div class="salary-card">
-        <form id="salaryForm" class="salary-form" autocomplete="off">
+        <div class="card-header">
+          <div class="input-label">Salary / Income</div>
+          <button
+            id="toggleSalaryForm"
+            class="toggle-btn"
+            type="button"
+            aria-expanded="false"
+            aria-controls="salaryForm"
+            data-open-label="− Hide Salary"
+            data-closed-label="＋ Add Salary"
+          >
+            ＋ Add Salary
+          </button>
+        </div>
+        <form id="salaryForm" class="salary-form" autocomplete="off" hidden>
           <label class="input-label" for="salaryInput">Salary / Income</label>
           <div class="salary-input-row">
             <input
@@ -482,11 +539,26 @@
             >
             <button class="secondary-btn" type="submit">Set Salary</button>
           </div>
-          <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
         </form>
+        <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
       </div>
 
-      <form id="entryForm" class="input-grid" autocomplete="off">
+      <div class="card-header">
+        <div class="input-label">Expenses</div>
+        <button
+          id="toggleExpenseForm"
+          class="toggle-btn"
+          type="button"
+          aria-expanded="false"
+          aria-controls="entryForm"
+          data-open-label="− Hide Expense"
+          data-closed-label="＋ Add Expense"
+        >
+          ＋ Add Expense
+        </button>
+      </div>
+
+      <form id="entryForm" class="input-grid" autocomplete="off" hidden>
         <label class="input-label" for="amountInput">Amount</label>
         <input
           id="amountInput"
@@ -538,6 +610,8 @@
       const salaryForm = document.getElementById('salaryForm');
       const salaryInput = document.getElementById('salaryInput');
       const salaryHint = document.getElementById('salaryHint');
+      const toggleSalaryBtn = document.getElementById('toggleSalaryForm');
+      const toggleExpenseBtn = document.getElementById('toggleExpenseForm');
       const refreshBtn = document.getElementById('refreshBtn');
       const resetBtn = document.getElementById('resetBtn');
       const statusMessage = document.getElementById('statusMessage');
@@ -739,7 +813,8 @@
           applyServerSummary(data);
 
           entryForm.reset();
-          amountInput.focus();
+          updateSectionState(toggleExpenseBtn, entryForm, false);
+          toggleExpenseBtn.focus();
           const remaining = salaryAmount - entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
           showStatus(`Expense saved. Remaining: ${formatCurrency(remaining)}`, 'success');
         } catch (error) {
@@ -762,8 +837,8 @@
           const data = await response.json().catch(() => ({}));
           renderEntries();
           applyServerSummary(data);
+          (entryForm.hidden ? toggleExpenseBtn : amountInput).focus();
           showStatus('Expense removed.', 'info');
-          amountInput.focus();
         } catch (error) {
           console.error('Failed to remove expense', error);
           showStatus(error.message || 'Failed to remove expense.', 'error');
@@ -805,8 +880,10 @@
           renderEntries();
           applyServerSummary(data);
           clearStatus();
+          updateSectionState(toggleSalaryBtn, salaryForm, false);
+          updateSectionState(toggleExpenseBtn, entryForm, false);
           showStatus('Everything cleared. Start fresh with a new salary.', 'success');
-          salaryInput.focus();
+          toggleExpenseBtn.focus();
         } catch (error) {
           console.error('Failed to reset entries', error);
           showStatus(error.message || 'Failed to reset entries.', 'error');
@@ -840,7 +917,8 @@
           salaryAmount = Number(data.salary) || 0;
           applyServerSummary(data);
           salaryForm.reset();
-          amountInput.focus();
+          updateSectionState(toggleSalaryBtn, salaryForm, false);
+          toggleSalaryBtn.focus();
           showStatus(`Salary set to ${formatCurrency(salaryAmount)}.`, 'success');
         } catch (error) {
           console.error('Failed to update salary', error);
@@ -866,12 +944,39 @@
         await resetAll();
       });
 
+      function updateSectionState(button, section, expanded, focusTarget) {
+        if (!button || !section) return;
+        section.hidden = !expanded;
+        button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        const openLabel = button.dataset.openLabel || 'Hide';
+        const closedLabel = button.dataset.closedLabel || 'Show';
+        button.textContent = expanded ? openLabel : closedLabel;
+        if (expanded && focusTarget) {
+          requestAnimationFrame(() => focusTarget.focus());
+        }
+      }
+
+      function toggleSection(button, section, focusTarget) {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        updateSectionState(button, section, !expanded, focusTarget);
+      }
+
+      toggleSalaryBtn.addEventListener('click', () => {
+        toggleSection(toggleSalaryBtn, salaryForm, salaryInput);
+      });
+
+      toggleExpenseBtn.addEventListener('click', () => {
+        toggleSection(toggleExpenseBtn, entryForm, amountInput);
+      });
+
       amountInput.addEventListener('keydown', () => clearStatus());
       labelInput.addEventListener('keydown', () => clearStatus());
       salaryInput.addEventListener('keydown', () => clearStatus());
 
       fetchEntries({ silent: true });
-      salaryInput.focus();
+      updateSectionState(toggleSalaryBtn, salaryForm, false);
+      updateSectionState(toggleExpenseBtn, entryForm, false);
+      toggleExpenseBtn.focus();
     })();
   </script>
   <script>
