@@ -41,12 +41,11 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow: hidden;
       position: relative;
       width: 100%;
       color: var(--text-strong);
@@ -63,15 +62,16 @@
       display: flex;
       flex-direction: column;
       gap: clamp(12px, 3vw, 20px);
-      min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      height: 100%;
       background: rgba(15, 23, 42, 0.22);
       backdrop-filter: blur(18px);
       border-radius: clamp(16px, 5vw, 28px);
       box-shadow: 0 32px 60px rgba(15, 23, 42, 0.35);
+      overflow: hidden;
     }
 
     .tracker-card {
-      flex: 0 0 auto;
+      flex: 1;
       display: flex;
       flex-direction: column;
       background: var(--card-bg);
@@ -377,7 +377,6 @@
       border-radius: 18px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       box-shadow: var(--shadow-strong);
-      max-height: min(420px, 55vh);
     }
 
     .actions-panel {
@@ -389,6 +388,8 @@
       display: flex;
       flex-direction: column;
       gap: clamp(14px, 4vw, 20px);
+      align-items: flex-start;
+      flex-shrink: 0;
     }
 
     .actions-panel h2 {
@@ -396,6 +397,24 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--text-muted);
+      margin: 0;
+    }
+
+    .actions-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .actions-menu .toggle-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .action-trigger {
+      width: 100%;
+      justify-content: center;
     }
 
     .entries-container::-webkit-scrollbar {
@@ -506,6 +525,12 @@
 
       .actions-panel {
         padding: clamp(14px, 6vw, 20px);
+        align-items: stretch;
+      }
+
+      .actions-menu .toggle-btn,
+      .action-trigger {
+        width: 100%;
       }
 
       .salary-input-row {
@@ -561,22 +586,42 @@
 
       <div class="actions-panel" aria-label="Add salary or expense">
         <h2>Actions</h2>
-        <div class="card-header">
-          <span class="sr-only" id="salarySectionLabel">Salary / Income</span>
+        <button
+          id="toggleActions"
+          class="toggle-btn action-trigger"
+          type="button"
+          aria-expanded="false"
+          aria-controls="actionsMenu"
+          data-open-label="Close Actions"
+          data-closed-label="Actions"
+        >
+          Actions
+        </button>
+        <div id="actionsMenu" class="actions-menu collapsible" hidden>
           <button
             id="toggleSalaryForm"
             class="toggle-btn"
             type="button"
             aria-expanded="false"
             aria-controls="salaryForm"
-            aria-labelledby="salarySectionLabel toggleSalaryForm"
             data-open-label="Hide Salary"
             data-closed-label="Add Salary"
           >
             Add Salary
           </button>
+          <button
+            id="toggleExpenseForm"
+            class="toggle-btn"
+            type="button"
+            aria-expanded="false"
+            aria-controls="entryForm"
+            data-open-label="Hide Expense"
+            data-closed-label="Add Expense"
+          >
+            Add Expense
+          </button>
         </div>
-        <form id="salaryForm" class="salary-form collapsible" autocomplete="off" hidden aria-labelledby="salarySectionLabel">
+        <form id="salaryForm" class="salary-form collapsible" autocomplete="off" hidden>
           <label class="input-label" for="salaryInput">Salary / Income</label>
           <div class="salary-input-row">
             <input
@@ -594,23 +639,7 @@
         </form>
         <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
 
-        <div class="card-header">
-          <span class="sr-only" id="expenseSectionLabel">Expenses</span>
-          <button
-            id="toggleExpenseForm"
-            class="toggle-btn"
-            type="button"
-            aria-expanded="false"
-            aria-controls="entryForm"
-            aria-labelledby="expenseSectionLabel toggleExpenseForm"
-            data-open-label="Hide Expense"
-            data-closed-label="Add Expense"
-          >
-            Add Expense
-          </button>
-        </div>
-
-        <form id="entryForm" class="input-grid collapsible" autocomplete="off" hidden aria-labelledby="expenseSectionLabel">
+        <form id="entryForm" class="input-grid collapsible" autocomplete="off" hidden>
           <label class="input-label" for="amountInput">Amount</label>
           <input
             id="amountInput"
@@ -651,6 +680,8 @@
       const salaryForm = document.getElementById('salaryForm');
       const salaryInput = document.getElementById('salaryInput');
       const salaryHint = document.getElementById('salaryHint');
+      const toggleActionsBtn = document.getElementById('toggleActions');
+      const actionsMenu = document.getElementById('actionsMenu');
       const toggleSalaryBtn = document.getElementById('toggleSalaryForm');
       const toggleExpenseBtn = document.getElementById('toggleExpenseForm');
       const refreshBtn = document.getElementById('refreshBtn');
@@ -855,7 +886,8 @@
 
           entryForm.reset();
           updateSectionState(toggleExpenseBtn, entryForm, false);
-          toggleExpenseBtn.focus();
+          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
+          toggleActionsBtn.focus();
           const remaining = salaryAmount - entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
           showStatus(`Expense saved. Remaining: ${formatCurrency(remaining)}`, 'success');
         } catch (error) {
@@ -878,7 +910,9 @@
           const data = await response.json().catch(() => ({}));
           renderEntries();
           applyServerSummary(data);
-          (entryForm.hidden ? toggleExpenseBtn : amountInput).focus();
+          const targetFocus = actionsMenu.hidden ? toggleExpenseBtn : toggleActionsBtn;
+          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
+          targetFocus.focus();
           showStatus('Expense removed.', 'info');
         } catch (error) {
           console.error('Failed to remove expense', error);
@@ -923,8 +957,9 @@
           clearStatus();
           updateSectionState(toggleSalaryBtn, salaryForm, false);
           updateSectionState(toggleExpenseBtn, entryForm, false);
+          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
           showStatus('Everything cleared. Start fresh with a new salary.', 'success');
-          toggleExpenseBtn.focus();
+          toggleActionsBtn.focus();
         } catch (error) {
           console.error('Failed to reset entries', error);
           showStatus(error.message || 'Failed to reset entries.', 'error');
@@ -959,7 +994,8 @@
           applyServerSummary(data);
           salaryForm.reset();
           updateSectionState(toggleSalaryBtn, salaryForm, false);
-          toggleSalaryBtn.focus();
+          updateSectionState(toggleActionsBtn, actionsMenu, true, toggleActionsBtn);
+          toggleActionsBtn.focus();
           showStatus(`Salary set to ${formatCurrency(salaryAmount)}.`, 'success');
         } catch (error) {
           console.error('Failed to update salary', error);
@@ -997,17 +1033,27 @@
         }
       }
 
-      function toggleSection(button, section, focusTarget) {
+      function toggleSection(button, section, focusTarget, { onOpen, onClose } = {}) {
         const expanded = button.getAttribute('aria-expanded') === 'true';
-        updateSectionState(button, section, !expanded, focusTarget);
+        const nextState = !expanded;
+        updateSectionState(button, section, nextState, focusTarget);
+        if (nextState && typeof onOpen === 'function') {
+          onOpen();
+        } else if (!nextState && typeof onClose === 'function') {
+          onClose();
+        }
       }
 
       toggleSalaryBtn.addEventListener('click', () => {
-        toggleSection(toggleSalaryBtn, salaryForm, salaryInput);
+        toggleSection(toggleSalaryBtn, salaryForm, salaryInput, {
+          onOpen: () => updateSectionState(toggleActionsBtn, actionsMenu, false)
+        });
       });
 
       toggleExpenseBtn.addEventListener('click', () => {
-        toggleSection(toggleExpenseBtn, entryForm, amountInput);
+        toggleSection(toggleExpenseBtn, entryForm, amountInput, {
+          onOpen: () => updateSectionState(toggleActionsBtn, actionsMenu, false)
+        });
       });
 
       amountInput.addEventListener('keydown', () => clearStatus());
@@ -1015,9 +1061,10 @@
       salaryInput.addEventListener('keydown', () => clearStatus());
 
       fetchEntries({ silent: true });
+      updateSectionState(toggleActionsBtn, actionsMenu, false);
       updateSectionState(toggleSalaryBtn, salaryForm, false);
       updateSectionState(toggleExpenseBtn, entryForm, false);
-      toggleExpenseBtn.focus();
+      toggleActionsBtn.focus();
     })();
   </script>
   <script>
