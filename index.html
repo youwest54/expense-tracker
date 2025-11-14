@@ -248,6 +248,51 @@
       color: #e2e8f0;
     }
 
+    .summary-pill.negative {
+      border-color: rgba(248, 113, 113, 0.45);
+      background: rgba(248, 113, 113, 0.16);
+      color: #fecaca;
+    }
+
+    .salary-card {
+      margin-top: 14px;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .salary-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .salary-input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .salary-input-row .text-input {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .salary-hint {
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .salary-hint.active {
+      color: #e2e8f0;
+    }
+
     .entries-container {
       flex: 1;
       overflow-y: auto;
@@ -362,6 +407,14 @@
       .entry-remove {
         align-self: flex-end;
       }
+
+      .salary-input-row {
+        flex-direction: column;
+      }
+
+      .salary-input-row .text-input {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -374,6 +427,26 @@
           <div class="app-caption">Log amounts, remember why, see the total</div>
         </div>
         <button id="resetBtn" class="ghost-btn" type="button">Reset All</button>
+      </div>
+
+      <div class="salary-card">
+        <form id="salaryForm" class="salary-form" autocomplete="off">
+          <label class="input-label" for="salaryInput">Salary / Income</label>
+          <div class="salary-input-row">
+            <input
+              id="salaryInput"
+              name="salary"
+              class="text-input"
+              type="text"
+              inputmode="decimal"
+              placeholder="Example: 2500"
+              spellcheck="false"
+              autocapitalize="none"
+            >
+            <button class="secondary-btn" type="submit">Set Salary</button>
+          </div>
+          <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
+        </form>
       </div>
 
       <form id="entryForm" class="input-grid" autocomplete="off">
@@ -402,15 +475,16 @@
 
         <div class="button-row">
           <button class="primary-btn" type="submit">Add Entry</button>
-          <button id="saveBtn" class="secondary-btn" type="button">Save List</button>
+          <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
         </div>
       </form>
 
       <div id="statusMessage" class="status-message"></div>
 
       <div class="summary-bar">
-        <div id="entryCount" class="summary-pill">Items: 0</div>
-        <div id="totalAmount" class="summary-pill">Total: €0.00</div>
+        <div id="salaryPill" class="summary-pill">Salary: €0.00</div>
+        <div id="entryCount" class="summary-pill">Expenses: 0 | Spent: €0.00</div>
+        <div id="totalAmount" class="summary-pill">Remaining: €0.00</div>
       </div>
 
       <div id="entriesContainer" class="entries-container">
@@ -424,17 +498,23 @@
       const amountInput = document.getElementById('amountInput');
       const labelInput = document.getElementById('labelInput');
       const entryForm = document.getElementById('entryForm');
-      const saveBtn = document.getElementById('saveBtn');
+      const salaryForm = document.getElementById('salaryForm');
+      const salaryInput = document.getElementById('salaryInput');
+      const salaryHint = document.getElementById('salaryHint');
+      const refreshBtn = document.getElementById('refreshBtn');
       const resetBtn = document.getElementById('resetBtn');
       const statusMessage = document.getElementById('statusMessage');
       const entriesContainer = document.getElementById('entriesContainer');
+      const salaryPill = document.getElementById('salaryPill');
       const entryCount = document.getElementById('entryCount');
       const totalAmount = document.getElementById('totalAmount');
 
       const API_ENDPOINT = '/api/entries';
+      const SALARY_ENDPOINT = '/api/salary';
       const DISPLAY_DURATION = 4000;
       let hideStatusTimeout = null;
       let entries = [];
+      let salaryAmount = 0;
 
       const currencyFormatter = new Intl.NumberFormat('en-GB', {
         style: 'currency',
@@ -481,10 +561,28 @@
         }
       }
 
+      function updateSalaryHint() {
+        if (!salaryHint) return;
+        if (salaryAmount > 0) {
+          salaryHint.textContent = `Tracking salary: ${formatCurrency(salaryAmount)}. Expenses subtract from this total.`;
+          salaryHint.classList.add('active');
+        } else {
+          salaryHint.textContent = 'No salary set yet. Add your salary to track remaining balance.';
+          salaryHint.classList.remove('active');
+        }
+      }
+
       function updateSummary() {
-        const total = entries.reduce((acc, entry) => acc + entry.amount, 0);
-        entryCount.textContent = `Items: ${entries.length}`;
-        totalAmount.textContent = `Total: ${formatCurrency(total)}`;
+        const total = entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
+        const remaining = salaryAmount - total;
+        const count = entries.length;
+
+        if (salaryPill) {
+          salaryPill.textContent = `Salary: ${formatCurrency(salaryAmount)}`;
+        }
+        entryCount.textContent = `Expenses: ${count} | Spent: ${formatCurrency(total)}`;
+        totalAmount.textContent = `Remaining: ${formatCurrency(remaining)}`;
+        totalAmount.classList.toggle('negative', remaining < 0);
       }
 
       function renderEntries() {
@@ -508,10 +606,9 @@
           const labelEl = document.createElement('div');
           labelEl.className = 'entry-label';
           labelEl.textContent = entry.label || `Item ${entries.length - index}`;
-
           info.appendChild(labelEl);
 
-          if (entry.rawValue && entry.rawValue !== entry.amount.toString()) {
+          if (entry.rawValue && entry.rawValue !== entry.amount?.toString()) {
             const noteEl = document.createElement('div');
             noteEl.className = 'entry-note';
             noteEl.textContent = `Entered as: ${entry.rawValue}`;
@@ -520,12 +617,13 @@
 
           const amountEl = document.createElement('div');
           amountEl.className = 'entry-amount';
-          amountEl.textContent = formatCurrency(entry.amount);
+          const amountValue = Number(entry.amount) || 0;
+          amountEl.textContent = formatCurrency(-Math.abs(amountValue));
 
           const removeBtn = document.createElement('button');
           removeBtn.className = 'entry-remove';
           removeBtn.type = 'button';
-          removeBtn.title = 'Remove entry';
+          removeBtn.title = 'Remove expense';
           removeBtn.textContent = '✕';
           removeBtn.addEventListener('click', () => removeEntry(entry.id));
 
@@ -537,6 +635,14 @@
         });
       }
 
+      function applyServerSummary(data) {
+        if (data && typeof data.salary === 'number') {
+          salaryAmount = data.salary;
+        }
+        updateSalaryHint();
+        updateSummary();
+      }
+
       async function fetchEntries({ silent = false } = {}) {
         try {
           const response = await fetch(API_ENDPOINT);
@@ -545,7 +651,9 @@
           }
           const data = await response.json();
           entries = Array.isArray(data.entries) ? data.entries : [];
+          salaryAmount = Number(data.salary) || 0;
           renderEntries();
+          updateSalaryHint();
           updateSummary();
           if (!silent) {
             showStatus('Loaded entries from server.', 'info');
@@ -567,7 +675,7 @@
         }
 
         try {
-          showStatus('Saving entry to server...', 'info');
+          showStatus('Saving expense...', 'info');
           const payload = {
             amount,
             rawValue: rawAmount.trim(),
@@ -581,24 +689,25 @@
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Server rejected the entry.');
+            throw new Error(errorData.error || 'Server rejected the expense.');
           }
 
           const data = await response.json();
           if (data.entry) {
             entries.unshift(data.entry);
             renderEntries();
-            updateSummary();
           } else {
             await fetchEntries({ silent: true });
           }
+          applyServerSummary(data);
 
-          showStatus('Entry saved.', 'success');
           entryForm.reset();
           amountInput.focus();
+          const remaining = salaryAmount - entries.reduce((acc, entry) => acc + (entry.amount || 0), 0);
+          showStatus(`Expense saved. Remaining: ${formatCurrency(remaining)}`, 'success');
         } catch (error) {
-          console.error('Failed to save entry', error);
-          showStatus(error.message || 'Failed to save entry.', 'error');
+          console.error('Failed to save expense', error);
+          showStatus(error.message || 'Failed to save expense.', 'error');
         }
       }
 
@@ -609,32 +718,34 @@
           });
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Unable to remove entry.');
+            throw new Error(errorData.error || 'Unable to remove expense.');
           }
+
           entries = entries.filter(entry => entry.id !== id);
+          const data = await response.json().catch(() => ({}));
           renderEntries();
-          updateSummary();
-          showStatus('Entry removed.', 'info');
+          applyServerSummary(data);
+          showStatus('Expense removed.', 'info');
           amountInput.focus();
         } catch (error) {
-          console.error('Failed to remove entry', error);
-          showStatus(error.message || 'Failed to remove entry.', 'error');
+          console.error('Failed to remove expense', error);
+          showStatus(error.message || 'Failed to remove expense.', 'error');
         }
       }
 
-      async function syncEntries() {
+      async function refreshEntries() {
         await fetchEntries({ silent: true });
         showStatus('Synced with server.', 'success');
       }
 
       async function resetAll() {
-        if (!entries.length && !amountInput.value && !labelInput.value) {
+        if (!entries.length && !amountInput.value && !labelInput.value && !salaryAmount) {
           showStatus('Nothing to reset.', 'info');
           return;
         }
 
-        const confirmReset = entries.length
-          ? window.confirm('Clear every entry from the server and start over?')
+        const confirmReset = entries.length || salaryAmount
+          ? window.confirm('Clear salary and every expense from the server?')
           : true;
 
         if (!confirmReset) {
@@ -649,16 +760,54 @@
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || 'Server refused to reset.');
           }
+          const data = await response.json();
           entries = [];
+          salaryAmount = 0;
           entryForm.reset();
+          salaryForm.reset();
           renderEntries();
-          updateSummary();
+          applyServerSummary(data);
           clearStatus();
-          showStatus('Everything cleared on the server.', 'success');
-          amountInput.focus();
+          showStatus('Everything cleared. Start fresh with a new salary.', 'success');
+          salaryInput.focus();
         } catch (error) {
           console.error('Failed to reset entries', error);
           showStatus(error.message || 'Failed to reset entries.', 'error');
+        }
+      }
+
+      async function updateSalary(rawAmount) {
+        const amount = sanitizeAmount(rawAmount);
+        if (Number.isNaN(amount)) {
+          salaryInput.classList.add('invalid');
+          setTimeout(() => salaryInput.classList.remove('invalid'), 1200);
+          showStatus('Please enter a valid salary number like 2500.', 'error');
+          salaryInput.focus();
+          return;
+        }
+
+        try {
+          showStatus('Updating salary...', 'info');
+          const response = await fetch(SALARY_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Server rejected the salary update.');
+          }
+
+          const data = await response.json();
+          salaryAmount = Number(data.salary) || 0;
+          applyServerSummary(data);
+          salaryForm.reset();
+          amountInput.focus();
+          showStatus(`Salary set to ${formatCurrency(salaryAmount)}.`, 'success');
+        } catch (error) {
+          console.error('Failed to update salary', error);
+          showStatus(error.message || 'Failed to update salary.', 'error');
         }
       }
 
@@ -667,8 +816,13 @@
         await addEntry(amountInput.value, labelInput.value || '');
       });
 
-      saveBtn.addEventListener('click', async () => {
-        await syncEntries();
+      salaryForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await updateSalary(salaryInput.value);
+      });
+
+      refreshBtn.addEventListener('click', async () => {
+        await refreshEntries();
       });
 
       resetBtn.addEventListener('click', async () => {
@@ -677,9 +831,10 @@
 
       amountInput.addEventListener('keydown', () => clearStatus());
       labelInput.addEventListener('keydown', () => clearStatus());
+      salaryInput.addEventListener('keydown', () => clearStatus());
 
       fetchEntries({ silent: true });
-      amountInput.focus();
+      salaryInput.focus();
     })();
   </script>
 </body>
