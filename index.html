@@ -33,41 +33,46 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-      height: 100vh;
-      height: 100dvh;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      position: fixed;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
       width: 100%;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
       color: var(--text-strong);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+        calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left);
+      scroll-behavior: smooth;
     }
 
     .app-shell {
-      position: fixed;
-      inset: 0;
-      padding: 16px;
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: clamp(12px, 4vw, 28px);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: clamp(12px, 3vw, 20px);
+      min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       background: rgba(15, 23, 42, 0.22);
       backdrop-filter: blur(18px);
+      border-radius: clamp(16px, 5vw, 28px);
+      box-shadow: 0 32px 60px rgba(15, 23, 42, 0.35);
     }
 
     .tracker-card {
-      flex: 1;
+      flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 18px;
-      padding: 18px;
+      padding: clamp(16px, 4vw, 24px);
       box-shadow: var(--shadow-strong);
       overflow: hidden;
+      width: 100%;
     }
 
     .top-row {
@@ -305,6 +310,7 @@
       border-radius: 18px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       box-shadow: var(--shadow-strong);
+      max-height: min(420px, 55vh);
     }
 
     .entries-container::-webkit-scrollbar {
@@ -383,11 +389,12 @@
 
     @media (max-width: 720px) and (max-height: 1280px) {
       .app-shell {
-        padding: 12px;
+        padding: clamp(12px, 6vw, 20px);
+        min-height: auto;
       }
 
       .tracker-card {
-        padding: 16px;
+        padding: clamp(14px, 5vw, 20px);
       }
 
       .text-input {
@@ -408,12 +415,34 @@
         align-self: flex-end;
       }
 
+      .entries-container {
+        max-height: none;
+      }
+
       .salary-input-row {
         flex-direction: column;
       }
 
       .salary-input-row .text-input {
         width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .top-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .summary-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .summary-pill {
+        width: 100%;
+        text-align: center;
       }
     }
   </style>
