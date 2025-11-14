@@ -97,6 +97,8 @@
       display: flex;
       gap: clamp(8px, 2.4vw, 12px);
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
     }
 
     .app-title {
@@ -330,10 +332,23 @@
       text-align: center;
     }
 
-    .summary-pill.negative {
-      border-color: rgba(248, 113, 113, 0.45);
-      background: rgba(248, 113, 113, 0.16);
-      color: #fecaca;
+    button.summary-pill {
+      appearance: none;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      background: rgba(15, 23, 42, 0.55);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    button.summary-pill:focus-visible {
+      outline: 2px solid rgba(56, 189, 248, 0.6);
+      outline-offset: 3px;
+    }
+
+    button.summary-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.35);
     }
 
     .salary-card {
@@ -389,6 +404,17 @@
       box-shadow: 0 18px 32px rgba(15, 23, 42, 0.28);
       scroll-padding-bottom: 16px;
       min-height: clamp(260px, 55vh, 520px);
+    }
+
+    .entries-modal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .salary-hint-container {
+      margin-top: clamp(10px, 3vw, 16px);
+      text-align: center;
     }
 
     .actions-panel {
@@ -675,7 +701,8 @@
           <div class="app-caption">Log amounts, remember why, see the total</div>
         </div>
         <div class="top-actions">
-          <button id="toggleExpenseForm" class="toggle-btn" type="button" aria-expanded="false" aria-controls="entryForm" data-open-label="Hide Expense" data-closed-label="Add Expense">Add Expense</button>
+          <button id="toggleSalaryForm" class="toggle-btn" type="button">Add Salary</button>
+          <button id="toggleExpenseForm" class="toggle-btn" type="button">Add Expense</button>
           <button id="resetBtn" class="ghost-btn" type="button">Reset All</button>
         </div>
       </div>
@@ -684,7 +711,7 @@
 
       <div class="summary-bar">
         <div id="salaryPill" class="summary-pill">Salary: €0.00</div>
-        <div id="entryCount" class="summary-pill">Expenses: 0 | Spent: €0.00</div>
+        <button id="openExpensesModal" type="button" class="summary-pill">Expenses: 0 | Spent: €0.00</button>
         <div id="totalAmount" class="summary-pill">Remaining: €0.00</div>
       </div>
 
@@ -692,18 +719,7 @@
         <div class="empty-state">No entries yet. Add your first amount.</div>
       </div>
 
-      <div class="actions-panel" aria-label="Add salary">
-        <button
-          id="toggleSalaryForm"
-          class="toggle-btn"
-          type="button"
-          aria-expanded="false"
-          aria-controls="salaryModal"
-          data-open-label="Hide Salary"
-          data-closed-label="Add Salary"
-        >
-          Add Salary
-        </button>
+      <div class="salary-hint-container">
         <div id="salaryHint" class="salary-hint">No salary set yet. Add your salary to track remaining balance.</div>
       </div>
     </div>
@@ -772,6 +788,16 @@
     </div>
   </div>
 
+  <div id="entriesModal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="entriesModalTitle">
+      <div class="modal-header">
+        <div id="entriesModalTitle" class="modal-title">Expense History</div>
+        <button class="modal-close" type="button" data-close-modal="entriesModal" aria-label="Close">✕</button>
+      </div>
+      <div id="entriesModalList" class="entries-container entries-modal-list"></div>
+    </div>
+  </div>
+
   <script>
     (() => {
       const amountInput = document.getElementById('amountInput');
@@ -782,10 +808,13 @@
       const salaryHint = document.getElementById('salaryHint');
       const salaryModal = document.getElementById('salaryModal');
       const expenseModal = document.getElementById('expenseModal');
+      const entriesModal = document.getElementById('entriesModal');
+      const entriesModalList = document.getElementById('entriesModalList');
       const modalCloseButtons = document.querySelectorAll('[data-close-modal]');
       const modalBackdrops = document.querySelectorAll('.modal-backdrop');
       const toggleSalaryBtn = document.getElementById('toggleSalaryForm');
       const toggleExpenseBtn = document.getElementById('toggleExpenseForm');
+      const openExpensesModalBtn = document.getElementById('openExpensesModal');
       const refreshBtn = document.getElementById('refreshBtn');
       const resetBtn = document.getElementById('resetBtn');
       const statusMessage = document.getElementById('statusMessage');
@@ -903,52 +932,57 @@
       }
 
       function renderEntries() {
-        entriesContainer.innerHTML = '';
+        const containers = [entriesContainer, entriesModalList];
 
-        if (!entries.length) {
-          const empty = document.createElement('div');
-          empty.className = 'empty-state';
-          empty.textContent = 'No entries yet. Add your first amount.';
-          entriesContainer.appendChild(empty);
-          return;
-        }
+        containers.forEach((container) => {
+          if (!container) return;
+          container.innerHTML = '';
 
-        entries.forEach((entry, index) => {
-          const row = document.createElement('div');
-          row.className = 'entry-row';
-
-          const info = document.createElement('div');
-          info.className = 'entry-info';
-
-          const labelEl = document.createElement('div');
-          labelEl.className = 'entry-label';
-          labelEl.textContent = entry.label || `Item ${entries.length - index}`;
-          info.appendChild(labelEl);
-
-          if (entry.rawValue && entry.rawValue !== entry.amount?.toString()) {
-            const noteEl = document.createElement('div');
-            noteEl.className = 'entry-note';
-            noteEl.textContent = `Entered as: ${entry.rawValue}`;
-            info.appendChild(noteEl);
+          if (!entries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = 'No entries yet. Add your first amount.';
+            container.appendChild(empty);
+            return;
           }
 
-          const amountEl = document.createElement('div');
-          amountEl.className = 'entry-amount';
-          const amountValue = Number(entry.amount) || 0;
-          amountEl.textContent = formatCurrency(-Math.abs(amountValue));
+          entries.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'entry-row';
 
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'entry-remove';
-          removeBtn.type = 'button';
-          removeBtn.title = 'Remove expense';
-          removeBtn.textContent = '✕';
-          removeBtn.addEventListener('click', () => removeEntry(entry.id));
+            const info = document.createElement('div');
+            info.className = 'entry-info';
 
-          row.appendChild(info);
-          row.appendChild(amountEl);
-          row.appendChild(removeBtn);
+            const labelEl = document.createElement('div');
+            labelEl.className = 'entry-label';
+            labelEl.textContent = entry.label || `Item ${entries.length - index}`;
+            info.appendChild(labelEl);
 
-          entriesContainer.appendChild(row);
+            if (entry.rawValue && entry.rawValue !== entry.amount?.toString()) {
+              const noteEl = document.createElement('div');
+              noteEl.className = 'entry-note';
+              noteEl.textContent = `Entered as: ${entry.rawValue}`;
+              info.appendChild(noteEl);
+            }
+
+            const amountEl = document.createElement('div');
+            amountEl.className = 'entry-amount';
+            const amountValue = Number(entry.amount) || 0;
+            amountEl.textContent = formatCurrency(-Math.abs(amountValue));
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'entry-remove';
+            removeBtn.type = 'button';
+            removeBtn.title = 'Remove expense';
+            removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', () => removeEntry(entry.id));
+
+            row.appendChild(info);
+            row.appendChild(amountEl);
+            row.appendChild(removeBtn);
+
+            container.appendChild(row);
+          });
         });
       }
 
@@ -1156,6 +1190,11 @@
       toggleExpenseBtn.addEventListener('click', (event) => {
         event.preventDefault();
         openModal(expenseModal, amountInput, toggleExpenseBtn);
+      });
+
+      openExpensesModalBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        openModal(entriesModal, entriesModal.querySelector('.modal-close'), openExpensesModalBtn);
       });
 
       modalCloseButtons.forEach((button) => {
