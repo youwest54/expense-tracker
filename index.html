@@ -64,6 +64,8 @@
       flex-direction: column;
       gap: clamp(10px, 3vw, 18px);
       height: 100%;
+      min-height: 0;
+      flex: 1;
       background: rgba(15, 23, 42, 0.18);
       backdrop-filter: blur(14px);
       border-radius: clamp(12px, 4vw, 26px);
@@ -83,6 +85,7 @@
       overflow: hidden;
       width: 100%;
       position: relative;
+      min-height: 0;
     }
 
     .top-row {
@@ -207,7 +210,7 @@
 
     .input-label {
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 500;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -316,7 +319,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: clamp(10px, 3vw, 14px);
-      margin-top: clamp(12px, 3vw, 16px);
+      margin-top: clamp(10px, 2.8vw, 14px);
     }
 
     .summary-pill {
@@ -397,23 +400,32 @@
       flex-direction: column;
       gap: 10px;
       padding: clamp(12px, 3vw, 16px);
-      margin-top: clamp(12px, 3vw, 16px);
+      margin-top: clamp(10px, 2.8vw, 14px);
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(17, 24, 39, 0.75));
       border-radius: clamp(14px, 3.5vw, 20px);
       border: 1px solid rgba(148, 163, 184, 0.35);
       box-shadow: 0 18px 32px rgba(15, 23, 42, 0.28);
       scroll-padding-bottom: 16px;
-      min-height: clamp(260px, 55vh, 520px);
+      min-height: clamp(180px, 40vh, 380px);
     }
 
     .entries-modal-list {
       display: flex;
+      flex: 1;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      padding: clamp(12px, 3vw, 20px);
+      margin: 0;
+      background: none;
+      border: none;
+      border-radius: clamp(14px, 3.5vw, 20px);
+      box-shadow: none;
+      min-height: auto;
+      overflow-y: auto;
     }
 
     .salary-hint-container {
-      margin-top: clamp(10px, 3vw, 16px);
+      margin-top: clamp(8px, 2.6vw, 12px);
       text-align: center;
     }
 
@@ -494,7 +506,7 @@
 
     .entry-label {
       font-size: 18px;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 0.5px;
     }
 
@@ -528,6 +540,20 @@
       transform: translateY(1px);
     }
 
+    .entry-row.sample {
+      border-style: dashed;
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .entry-row.sample .entry-label {
+      color: var(--accent);
+    }
+
+    .entry-row.sample .entry-note {
+      color: rgba(148, 163, 184, 0.85);
+    }
+
     .empty-state {
       text-align: center;
       padding: 28px 16px;
@@ -538,6 +564,22 @@
       letter-spacing: 0.6px;
       text-transform: uppercase;
       color: var(--text-muted);
+    }
+
+    .empty-state[role="button"] {
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+    }
+
+    .empty-state[role="button"]:hover {
+      border-color: rgba(56, 189, 248, 0.55);
+      color: var(--accent);
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .empty-state[role="button"]:focus-visible {
+      outline: 2px solid rgba(56, 189, 248, 0.65);
+      outline-offset: 4px;
     }
 
     .modal-backdrop {
@@ -571,7 +613,8 @@
       flex-direction: column;
       gap: 14px;
       position: relative;
-      max-height: min(90vh, 540px);
+      height: clamp(420px, 85vh, 720px);
+      max-height: 95vh;
       overflow-y: auto;
     }
 
@@ -580,6 +623,12 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+      padding: 4px clamp(2px, 1.4vw, 4px) 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
     }
 
     .modal-title {
@@ -610,14 +659,28 @@
       border-color: rgba(148, 163, 184, 0.55);
     }
 
-    @media (max-width: 720px) and (max-height: 1280px) {
+    @media (max-width: 720px) and (orientation: portrait) {
+      body {
+        padding: clamp(6px, 4vw, 12px);
+        padding-top: max(env(safe-area-inset-top), clamp(10px, 5vw, 16px));
+        padding-bottom: max(calc(env(safe-area-inset-bottom) + 10px), clamp(12px, 5vw, 18px));
+        overflow: hidden;
+        height: 100dvh;
+        min-height: 100dvh;
+      }
+
       .app-shell {
-        padding: clamp(12px, 6vw, 20px);
-        min-height: auto;
+        padding: clamp(10px, 5vw, 16px);
+        min-height: 0;
+        max-width: 100%;
+        border-radius: clamp(12px, 6vw, 18px);
+        gap: clamp(8px, 5vw, 14px);
       }
 
       .tracker-card {
-        padding: clamp(14px, 5vw, 20px);
+        padding: clamp(12px, 5vw, 16px);
+        border-radius: clamp(14px, 6vw, 18px);
+        gap: clamp(10px, 4.6vw, 16px);
       }
 
       .text-input {
@@ -625,21 +688,68 @@
         padding: 12px;
       }
 
+      .top-row {
+        align-items: stretch;
+        gap: clamp(8px, 5vw, 14px);
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: stretch;
+        gap: clamp(8px, 4vw, 12px);
+        flex-direction: column;
+      }
+
+      .top-actions .toggle-btn,
+      .top-actions .ghost-btn {
+        flex: 1;
+        font-size: clamp(11px, 3.4vw, 13px);
+        padding: 10px 12px;
+      }
+
+      .app-title {
+        font-size: clamp(18px, 6vw, 22px);
+      }
+
+      .app-caption {
+        font-size: clamp(10px, 3.4vw, 12px);
+      }
+
+      .summary-bar {
+        gap: clamp(6px, 3.6vw, 9px);
+        margin-top: clamp(8px, 3.6vw, 12px);
+      }
+
+      .summary-pill {
+        padding: clamp(9px, 4vw, 12px);
+        font-size: clamp(10px, 2.8vw, 11px);
+      }
+
       .entry-row {
         flex-direction: column;
         align-items: flex-start;
+        padding: clamp(10px, 4.6vw, 14px);
+        gap: clamp(8px, 3.8vw, 12px);
       }
 
       .entry-amount {
         align-self: flex-end;
+        font-size: clamp(15px, 4.4vw, 18px);
       }
 
       .entry-remove {
         align-self: flex-end;
+        padding: 8px 10px;
       }
 
       .entries-container {
         max-height: none;
+        min-height: 0;
+        border-radius: clamp(12px, 6.5vw, 18px);
+        padding: clamp(10px, 4.8vw, 16px);
+        gap: clamp(8px, 4vw, 14px);
+        margin-top: clamp(8px, 4vw, 12px);
+        flex: 1;
       }
 
       .actions-panel {
@@ -660,14 +770,119 @@
         width: 100%;
       }
 
-      .top-actions {
+      .modal-backdrop {
+        padding: clamp(12px, 7vw, 26px);
+      }
+
+      .modal-card {
         width: 100%;
-        justify-content: stretch;
+        border-radius: clamp(16px, 8vw, 24px);
+        height: min(88vh, 640px);
+        max-height: 88vh;
+        padding: clamp(16px, 7vw, 22px);
+      }
+
+      .entries-modal-list {
+        padding: clamp(16px, 7vw, 24px);
+        gap: clamp(12px, 6vw, 20px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: max(env(safe-area-inset-top), 0px) 0 max(env(safe-area-inset-bottom), 12px);
+        overflow-y: auto;
+        height: auto;
+        min-height: 100dvh;
+      }
+
+      .app-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        min-height: 100dvh;
+        gap: 12px;
+      }
+
+      .tracker-card {
+        padding: 14px 12px;
+        border-radius: 0;
+        gap: 10px;
+        min-height: 100%;
+      }
+
+      .top-row {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .app-title {
+        font-size: 1.2rem;
+      }
+
+      .app-caption {
+        font-size: 0.75rem;
+      }
+
+      .top-actions {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
       }
 
       .top-actions .toggle-btn,
       .top-actions .ghost-btn {
-        flex: 1;
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 0.48rem 0.75rem;
+        font-weight: 600;
+      }
+
+      .summary-bar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .summary-pill {
+        width: 100%;
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+      }
+
+      button.summary-pill {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .entries-container {
+        padding: 10px;
+        gap: 8px;
+        margin-top: 10px;
+        min-height: clamp(140px, 42vh, 320px);
+        border-radius: 12px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18), 0 0 12px rgba(56, 189, 248, 0.26);
+      }
+
+      .entry-row {
+        padding: 10px;
+        gap: 8px;
+      }
+
+      .entry-label {
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      .entry-amount {
+        font-size: 0.95rem;
+      }
+
+      .salary-hint-container {
+        margin-top: 10px;
       }
     }
 
@@ -820,8 +1035,8 @@
       const statusMessage = document.getElementById('statusMessage');
       const entriesContainer = document.getElementById('entriesContainer');
       const salaryPill = document.getElementById('salaryPill');
-      const entryCount = document.getElementById('entryCount');
       const totalAmount = document.getElementById('totalAmount');
+      const entriesModalCloseBtn = entriesModal ? entriesModal.querySelector('.modal-close') : null;
 
       const API_ENDPOINT = '/api/entries';
       const SALARY_ENDPOINT = '/api/salary';
@@ -885,6 +1100,12 @@
         }, 180);
       }
 
+      function openEntriesHistory(trigger = openExpensesModalBtn) {
+        if (!entriesModal) return;
+        const focusTarget = entriesModalCloseBtn || null;
+        openModal(entriesModal, focusTarget, trigger || openExpensesModalBtn);
+      }
+
       function showStatus(message, type = 'info') {
         statusMessage.textContent = message;
         statusMessage.className = `status-message ${type}`;
@@ -926,7 +1147,9 @@
         if (salaryPill) {
           salaryPill.textContent = `Salary: ${formatCurrency(salaryAmount)}`;
         }
-        entryCount.textContent = `Expenses: ${count} | Spent: ${formatCurrency(total)}`;
+        if (openExpensesModalBtn) {
+          openExpensesModalBtn.textContent = `Expenses: ${count} | Spent: ${formatCurrency(total)}`;
+        }
         totalAmount.textContent = `Remaining: ${formatCurrency(remaining)}`;
         totalAmount.classList.toggle('negative', remaining < 0);
       }
@@ -942,7 +1165,45 @@
             const empty = document.createElement('div');
             empty.className = 'empty-state';
             empty.textContent = 'No entries yet. Add your first amount.';
+            if (container === entriesContainer) {
+              empty.tabIndex = 0;
+              empty.setAttribute('role', 'button');
+              empty.setAttribute('aria-label', 'Open expense history to review or add entries');
+              empty.addEventListener('click', () => openEntriesHistory(empty));
+              empty.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openEntriesHistory(empty);
+                }
+              });
+            }
             container.appendChild(empty);
+            if (container === entriesModalList) {
+              const sample = document.createElement('div');
+              sample.className = 'entry-row sample';
+              sample.setAttribute('aria-hidden', 'true');
+
+              const sampleInfo = document.createElement('div');
+              sampleInfo.className = 'entry-info';
+
+              const sampleLabel = document.createElement('div');
+              sampleLabel.className = 'entry-label';
+              sampleLabel.textContent = 'Example: YouTube membership';
+              sampleInfo.appendChild(sampleLabel);
+
+              const sampleNote = document.createElement('div');
+              sampleNote.className = 'entry-note';
+              sampleNote.textContent = 'Add a real expense via “Add Expense” and it will appear here.';
+              sampleInfo.appendChild(sampleNote);
+
+              const sampleAmount = document.createElement('div');
+              sampleAmount.className = 'entry-amount';
+              sampleAmount.textContent = formatCurrency(-50);
+
+              sample.appendChild(sampleInfo);
+              sample.appendChild(sampleAmount);
+              container.appendChild(sample);
+            }
             return;
           }
 
@@ -1194,7 +1455,7 @@
 
       openExpensesModalBtn.addEventListener('click', (event) => {
         event.preventDefault();
-        openModal(entriesModal, entriesModal.querySelector('.modal-close'), openExpensesModalBtn);
+        openEntriesHistory(openExpensesModalBtn);
       });
 
       modalCloseButtons.forEach((button) => {
